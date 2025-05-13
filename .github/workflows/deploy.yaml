@@ -1,0 +1,39 @@
+name: Trigger Cloud Build and Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          token_format: 'access_token'
+          workload_identity_provider: 'projects/188263521940/locations/global/workloadIdentityPools/new-github-pool1/providers/github-provider1'
+          service_account: 'new-github-actions@saikiran9640.iam.gserviceaccount.com'
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: 'saikiran9640'
+
+      - name: Trigger Cloud Build
+        run: |
+          gcloud builds submit . \
+            --tag us-central1-docker.pkg.dev/saikiran9640/hello-repo3/hello-annalect
+          gcloud run deploy hello-annalect \
+            --image us-central1-docker.pkg.dev/saikiran9640/hello-repo3/hello-annalect \
+            --region us-central1 \
+            --platform managed \
+            --allow-unauthenticated
